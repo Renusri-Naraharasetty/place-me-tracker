@@ -1,0 +1,84 @@
+.filter-bar .form-input,
+.filter-bar .form-select {
+  max-width: 250px;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Logout button ── */
+.btn-logout {
+  width: 100%;
+  margin-top: var(--sp-3);
+  justify-content: center;
+}
+
+/* ── Back Link ── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-5);
+  transition: var(--transition);
+}
+
+.back-link:hover { color: var(--accent-purple-light); }
+
+/* ── Detail Sections ── */
+.detail-section {
+  margin-bottom: var(--sp-8);
+}
+
+.detail-section-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--text-heading);
+  margin-bottom: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-4);
+}
+
+.detail-item label {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--sp-1);
+}
+
+.detail-item p {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
