@@ -13,6 +13,8 @@ import DiscussionDetailPage from './pages/DiscussionDetailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
+import InterviewQuestionsPage from './pages/InterviewQuestionsPage';
+
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
@@ -40,6 +42,7 @@ export default function App() {
         <Route path="insights" element={<InsightsPage />} />
         <Route path="community" element={<CommunityPage />} />
         <Route path="community/:id" element={<DiscussionDetailPage />} />
+        <Route path="interview-questions" element={<InterviewQuestionsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

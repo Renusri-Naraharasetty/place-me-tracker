@@ -221,7 +221,7 @@ export default function DashboardPage() {
           <div className="kpi-value"><AnimatedCounter end={data.total} /></div>
           <div className="kpi-label">Total Applications</div>
         </div>
-        <div className="kpi-card" style={{ flex: '1 1 200px' }}>
+        <div className="kpi-card" onClick={() => navigate('/interview-questions')} style={{ cursor: 'pointer', flex: '1 1 200px' }}>
           <div className="kpi-icon blue"><Users size={22} /></div>
           <div className="kpi-value"><AnimatedCounter end={data.interviews} /></div>
           <div className="kpi-label">Interviews</div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
 import { Bar, Doughnut } from 'react-chartjs-2';
@@ -59,6 +59,7 @@ export default function InsightsPage() {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -71,120 +72,121 @@ export default function InsightsPage() {
     load();
   }, [user]);
 
-  if (loading) return <div className="empty-state"><p>Loading insights...</p></div>;
-
   const data = analytics || {
     total: 0, rejections: 0, offers: 0, interviews: 0,
     rejectionStages: [], rejectionReasons: [], topMissingSkills: [],
     appsPerInterview: 0, statusCounts: [], rejectedApplications: []
   };
 
-  // ── Applications by Status (always visible) ──
-  const statusLabels = (data.statusCounts || []).map(s => s.status);
-  const statusValues = (data.statusCounts || []).map(s => s.count);
-  const statusChartData = {
-    labels: statusLabels,
-    datasets: [{
-      data: statusValues,
-      backgroundColor: statusLabels.map(l => STATUS_COLORS[l] || 'rgba(139, 92, 246, 0.6)'),
-      borderWidth: 0,
-      hoverOffset: 10
-    }]
-  };
+  // ── Stable Data Calculations ──
+  const { statusChartData, rejStageData, skillData, suggestions, statusValues } = useMemo(() => {
+    const statusLabels = (data.statusCounts || []).map(s => s.status);
+    const sValues = (data.statusCounts || []).map(s => s.count);
+    
+    const scData = {
+      labels: statusLabels,
+      datasets: [{
+        data: sValues,
+        backgroundColor: statusLabels.map(l => STATUS_COLORS[l] || 'rgba(139, 92, 246, 0.6)'),
+        borderWidth: 0,
+        hoverOffset: 10
+      }]
+    };
 
-  // ── Rejection by stage (needs outcomes) ──
-  const rejStageData = {
-    labels: (data.rejectionStages || []).map(r => r.rejection_stage),
-    datasets: [{
-      label: 'Rejections',
-      data: (data.rejectionStages || []).map(r => r.count),
-      backgroundColor: [
-        'rgba(239, 68, 68, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(59, 130, 246, 0.6)',
-        'rgba(236, 72, 153, 0.6)', 'rgba(139, 92, 246, 0.6)', 'rgba(6, 182, 212, 0.6)'
-      ],
-      borderWidth: 0,
-      borderRadius: 8,
-    }]
-  };
+    const rsData = {
+      labels: (data.rejectionStages || []).map(r => r.rejection_stage),
+      datasets: [{
+        label: 'Rejections',
+        data: (data.rejectionStages || []).map(r => r.count),
+        backgroundColor: [
+          'rgba(239, 68, 68, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(59, 130, 246, 0.6)',
+          'rgba(236, 72, 153, 0.6)', 'rgba(139, 92, 246, 0.6)', 'rgba(6, 182, 212, 0.6)'
+        ],
+        borderWidth: 0,
+        borderRadius: 8,
+      }]
+    };
 
-  // ── Top missing skills (needs resume analysis) ──
-  const skillData = {
-    labels: (data.topMissingSkills || []).map(s => s.skill),
-    datasets: [{
-      label: 'Times Missing',
-      data: (data.topMissingSkills || []).map(s => s.count),
-      backgroundColor: 'rgba(139, 92, 246, 0.5)',
-      borderColor: '#8b5cf6',
-      borderWidth: 2,
-      borderRadius: 8,
-    }]
-  };
+    const skData = {
+      labels: (data.topMissingSkills || []).map(s => s.skill),
+      datasets: [{
+        label: 'Times Missing',
+        data: (data.topMissingSkills || []).map(s => s.count),
+        backgroundColor: 'rgba(139, 92, 246, 0.5)',
+        borderColor: '#8b5cf6',
+        borderWidth: 2,
+        borderRadius: 8,
+      }]
+    };
 
-  // ── Suggestions builder ──
-  const suggestions = [];
+    const suggs = [];
+    if (data.rejectionStages && data.rejectionStages.length > 0) {
+      const topRejStage = data.rejectionStages.reduce((a, b) => a.count > b.count ? a : b);
+      suggs.push({
+        icon: AlertTriangle,
+        color: 'var(--accent-red)',
+        bg: 'rgba(239, 68, 68, 0.15)',
+        title: `Most rejections at: ${topRejStage.rejection_stage}`,
+        tips: getStageImprovementTips(topRejStage.rejection_stage),
+      });
+    }
 
-  if (data.rejectionStages && data.rejectionStages.length > 0) {
-    const topRejStage = data.rejectionStages.reduce((a, b) => a.count > b.count ? a : b);
-    suggestions.push({
-      icon: AlertTriangle,
-      color: 'var(--accent-red)',
-      bg: 'rgba(239, 68, 68, 0.15)',
-      title: `Most rejections at: ${topRejStage.rejection_stage}`,
-      tips: getStageImprovementTips(topRejStage.rejection_stage),
-    });
-  }
-
-  if (data.rejections > 0 && data.rejectionStages && data.rejectionStages.length === 0) {
-    suggestions.push({
-      icon: AlertTriangle,
-      color: 'var(--accent-red)',
-      bg: 'rgba(239, 68, 68, 0.15)',
-      title: `You have ${data.rejections} rejection${data.rejections > 1 ? 's' : ''}`,
-      tips: [
-        'Open each rejected application and log the rejection stage to unlock stage analysis',
-        'Tailor your resume keywords to match the job description',
-        'Consider reaching out to HR for feedback on your application',
-      ],
-    });
-  }
-
-  if (data.topMissingSkills && data.topMissingSkills.length > 0) {
-    suggestions.push({
-      icon: BookOpen,
-      color: 'var(--accent-purple)',
-      bg: 'rgba(139, 92, 246, 0.15)',
-      title: 'Top Skills to Learn',
-      tips: data.topMissingSkills.slice(0, 5).map(s => `Learn ${s.skill} — missing in ${s.count} analysis${s.count > 1 ? 'es' : ''}`),
-    });
-  }
-
-  if (data.total > 0 && data.rejections > 0) {
-    const rate = Math.round((data.rejections / data.total) * 100);
-    if (rate > 70) {
-      suggestions.push({
-        icon: Target,
-        color: 'var(--accent-amber)',
-        bg: 'rgba(245, 158, 11, 0.15)',
-        title: `High rejection rate: ${rate}%`,
+    if (data.rejections > 0 && data.rejectionStages && data.rejectionStages.length === 0) {
+      suggs.push({
+        icon: AlertTriangle,
+        color: 'var(--accent-red)',
+        bg: 'rgba(239, 68, 68, 0.15)',
+        title: `You have ${data.rejections} rejection${data.rejections > 1 ? 's' : ''}`,
         tips: [
-          'Consider tailoring your resume for each application',
-          'Focus on roles that match your current skill set',
-          'Practice mock interviews to improve your performance',
-          'Get your resume reviewed by seniors or career counselors',
+          'Open each rejected application and log the rejection stage to unlock stage analysis',
+          'Tailor your resume keywords to match the job description',
+          'Consider reaching out to HR for feedback on your application',
         ],
       });
     }
-  }
 
-  if (data.rejectionReasons && data.rejectionReasons.length > 0) {
-    suggestions.push({
-      icon: Lightbulb,
-      color: 'var(--accent-cyan)',
-      bg: 'rgba(6, 182, 212, 0.15)',
-      title: 'Common Rejection Reasons',
-      tips: data.rejectionReasons.map(r => `"${r.rejection_reason}" — ${r.count} time${r.count > 1 ? 's' : ''}`),
-    });
-  }
+    if (data.topMissingSkills && data.topMissingSkills.length > 0) {
+      suggs.push({
+        icon: BookOpen,
+        color: 'var(--accent-purple)',
+        bg: 'rgba(139, 92, 246, 0.15)',
+        title: 'Top Skills to Learn',
+        tips: data.topMissingSkills.slice(0, 5).map(s => `Learn ${s.skill} — missing in ${s.count} analysis${s.count > 1 ? 'es' : ''}`),
+      });
+    }
+
+    if (data.total > 0 && data.rejections > 0) {
+      const rate = Math.round((data.rejections / data.total) * 100);
+      if (rate > 70) {
+        suggs.push({
+          icon: Target,
+          color: 'var(--accent-amber)',
+          bg: 'rgba(245, 158, 11, 0.15)',
+          title: `High rejection rate: ${rate}%`,
+          tips: [
+            'Consider tailoring your resume for each application',
+            'Focus on roles that match your current skill set',
+            'Practice mock interviews to improve your performance',
+            'Get your resume reviewed by seniors or career counselors',
+          ],
+        });
+      }
+    }
+
+    if (data.rejectionReasons && data.rejectionReasons.length > 0) {
+      suggs.push({
+        icon: Lightbulb,
+        color: 'var(--accent-cyan)',
+        bg: 'rgba(6, 182, 212, 0.15)',
+        title: 'Common Rejection Reasons',
+        tips: data.rejectionReasons.map(r => `"${r.rejection_reason}" — ${r.count} time${r.count > 1 ? 's' : ''}`),
+      });
+    }
+
+    return { statusChartData: scData, rejStageData: rsData, skillData: skData, suggestions: suggs, statusValues: sValues };
+  }, [data]);
+
+  if (loading) return <div className="empty-state"><p>Loading insights...</p></div>;
 
   const noApps = data.total === 0;
 
@@ -227,6 +229,21 @@ export default function InsightsPage() {
               <div className="kpi-value">{(data.topMissingSkills || []).length}</div>
               <div className="kpi-label">Skills to Improve</div>
             </div>
+          </div>
+
+          {/* Toggle for Suggestions */}
+          <div className="toggle-wrapper slide-up">
+            <label className="switch">
+              <input 
+                type="checkbox" 
+                checked={showSuggestions} 
+                onChange={(e) => setShowSuggestions(e.target.checked)} 
+              />
+              <span className="slider"></span>
+            </label>
+            <span className="toggle-label" onClick={() => setShowSuggestions(!showSuggestions)}>
+              Show Improvement Suggestions
+            </span>
           </div>
 
           {/* Charts Grid */}
@@ -293,31 +310,48 @@ export default function InsightsPage() {
           </div>
 
           {/* Suggestions */}
-          {suggestions.length > 0 && (
-            <div style={{ marginTop: 'var(--sp-8)' }}>
-              <h2 style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, marginBottom: 'var(--sp-5)', color: 'var(--text-heading)' }}>
-                💡 Improvement Suggestions
-              </h2>
-              {suggestions.map((s, i) => (
-                <div className="insight-card" key={i}>
-                  <div className="insight-header">
-                    <div className="insight-icon" style={{ background: s.bg, color: s.color }}>
-                      <s.icon size={20} />
+          <div className={`suggestions-section ${showSuggestions ? 'visible' : ''}`} style={{ 
+            maxHeight: showSuggestions ? '2000px' : '0',
+            opacity: showSuggestions ? 1 : 0,
+            overflow: 'hidden',
+            transition: 'all 0.5s ease-in-out',
+            marginTop: showSuggestions ? 'var(--sp-8)' : '0'
+          }}>
+            {suggestions.length > 0 ? (
+              <div>
+                <h2 style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, marginBottom: 'var(--sp-5)', color: 'var(--text-heading)' }}>
+                  💡 Improvement Suggestions
+                </h2>
+                {suggestions.map((s, i) => (
+                  <div className="insight-card" key={i}>
+                    <div className="insight-header">
+                      <div className="insight-icon" style={{ background: s.bg, color: s.color }}>
+                        <s.icon size={20} />
+                      </div>
+                      <h3 style={{ fontSize: 'var(--fs-base)', fontWeight: 700 }}>{s.title}</h3>
                     </div>
-                    <h3 style={{ fontSize: 'var(--fs-base)', fontWeight: 700 }}>{s.title}</h3>
+                    <ul className="suggestion-list">
+                      {s.tips.map((tip, j) => <li key={j}>{tip}</li>)}
+                    </ul>
                   </div>
-                  <ul className="suggestion-list">
-                    {s.tips.map((tip, j) => <li key={j}>{tip}</li>)}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="glass-card" style={{ padding: 'var(--sp-6)', textAlign: 'center' }}>
+                <Lightbulb size={32} style={{ color: 'var(--accent-cyan)', opacity: 0.5, marginBottom: 'var(--sp-3)' }} />
+                <h3 style={{ fontSize: 'var(--fs-base)', fontWeight: 700, marginBottom: 'var(--sp-2)' }}>No Suggestions Available Yet</h3>
+                <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)' }}>
+                  Keep logging your applications and interview stages. As you add more data, we'll suggest targeted ways to improve your placement chances!
+                </p>
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
   );
 }
+
 
 function getStageImprovementTips(stage) {
   const tips = {
