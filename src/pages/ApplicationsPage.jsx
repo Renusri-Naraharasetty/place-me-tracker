@@ -49,7 +49,7 @@ export default function ApplicationsPage() {
   return (
     <div className="fade-in page-enter" style={{ position: 'relative' }}>
       <div className="page-header" style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--sp-4)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--sp-4)' }}>
           <div>
             <h1 className="page-title bounce-in" style={{ display: 'inline-block' }}>Applications 💼</h1>
             <p className="page-subtitle">{applications.length} applications tracked so far ✨</p>
@@ -127,7 +127,7 @@ export default function ApplicationsPage() {
           <Briefcase size={48} className="empty-icon" />
           <h3>{search || statusFilter !== 'All' ? 'No matching applications 😔' : 'No applications yet 🥺'}</h3>
           <p>{search || statusFilter !== 'All' ? 'Try adjusting your filters or adding a new application.' : 'Start tracking your placement journey by adding your first application.'}</p>
-          <button className="btn btn-primary" style={{ marginTop: 'var(--sp-4)' }} onClick={() => handleOpenForm()}>
+          <button className="btn btn-primary empty-state-btn" onClick={() => handleOpenForm()}>
             <Plus size={16} /> Add Your First Application
           </button>
         </div>

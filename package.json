@@ -11,6 +11,7 @@
     "preview": "node ./node_modules/vite/bin/vite.js preview"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.4",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.1.2",
     "chart.js": "^4.4.3",
@@ -18,7 +19,10 @@
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "^4.19.2",
+    "google-auth-library": "^10.6.1",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.424.0",
+    "nodemailer": "^8.0.2",
     "pdfjs-dist": "^3.11.174",
     "pg": "^8.20.0",
     "react": "^18.3.1",

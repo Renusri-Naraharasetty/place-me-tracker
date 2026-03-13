@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
@@ -45,6 +46,7 @@ const doughnutOptions = {
 };
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { analytics, fetchAnalytics, fetchApplications, applications } = useData();
 
@@ -206,25 +208,32 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="kpi-grid" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="kpi-card">
+      <div className="kpi-grid" style={{ 
+        position: 'relative', 
+        zIndex: 1,
+        display: 'flex',
+        justifyContent: 'center',
+        gap: 'var(--sp-6)',
+        flexWrap: 'wrap'
+      }}>
+        <div className="kpi-card" onClick={() => navigate('/applications')} style={{ cursor: 'pointer', flex: '1 1 200px' }}>
           <div className="kpi-icon purple"><Briefcase size={22} /></div>
           <div className="kpi-value"><AnimatedCounter end={data.total} /></div>
           <div className="kpi-label">Total Applications</div>
         </div>
-        <div className="kpi-card">
+        <div className="kpi-card" style={{ flex: '1 1 200px' }}>
           <div className="kpi-icon blue"><Users size={22} /></div>
           <div className="kpi-value"><AnimatedCounter end={data.interviews} /></div>
           <div className="kpi-label">Interviews</div>
         </div>
-        <div className="kpi-card">
+        <div className="kpi-card" style={{ flex: '1 1 200px' }}>
           <div className="kpi-icon green"><Trophy size={22} /></div>
           <div className="kpi-value"><AnimatedCounter end={data.offers} /></div>
           <div className="kpi-label">Offers Received</div>
         </div>
-        <div className="kpi-card">
-          <div className="kpi-icon red"><XCircle size={22} /></div>
-          <div className="kpi-value"><AnimatedCounter end={rejectionRate} suffix="%" /></div>
+        <div className="kpi-card" style={{ flex: '1 1 200px' }}>
+          <div className="kpi-icon orange"><XCircle size={22} /></div>
+          <div className="kpi-value"><AnimatedCounter end={rejectionRate} />%</div>
           <div className="kpi-label">Rejection Rate</div>
         </div>
       </div>

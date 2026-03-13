@@ -2,7 +2,23 @@ import express from 'express';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
+import nodemailer from 'nodemailer';
 import pool from './db.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'placeme-super-secret-key-2024';
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Email transporter (will use environment variables)
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+  port: process.env.SMTP_PORT || 587,
+  auth: {
+    user: process.env.SMTP_USER || 'mock-user',
+    pass: process.env.SMTP_PASS || 'mock-pass',
+  },
+});
 
 const app = express();
 app.use(cors());
@@ -11,39 +27,148 @@ app.use(express.json({ limit: '5mb' }));
 /* ─── AUTH ─── */
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { name, email, password, college, branch } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, and password are required' });
+    const { name, username, password, college, branch } = req.body;
+    if (!name || !username || !password) return res.status(400).json({ error: 'Name, username, and password are required' });
     
-    // Check for existing user
-    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-    if (existing.rows.length > 0) return res.status(409).json({ error: 'Email already registered' });
+    // Username validation: 4-20 chars, alphanumeric/underscore
+    const usernameRegex = /^[a-zA-Z0-9_]{4,20}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({ error: 'Username must be 4-20 characters long and contain only letters, numbers, and underscores.' });
+    }
+
+    // Check for existing user by username
+    const existing = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
+    if (existing.rows.length > 0) return res.status(409).json({ error: 'This username is already taken. Please choose another one.' });
     
+    // Password validation: min 6 chars, upper, lower, digit
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ error: 'Password must include at least 6 characters, one uppercase letter, one lowercase letter, and a number.' });
+    }
+
     const hashed = bcrypt.hashSync(password, 10);
     const id = uuidv4();
     
     await pool.query(
-      'INSERT INTO users (id, name, email, password, college, branch) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, name, email, hashed, college || '', branch || '']
+      'INSERT INTO users (id, name, username, password, college, branch) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, name, username, hashed, college || '', branch || '']
     );
     
-    const userRes = await pool.query('SELECT id, name, email, college, branch FROM users WHERE id = $1', [id]);
-    res.status(201).json({ user: userRes.rows[0] });
+    const userRes = await pool.query('SELECT id, name, username, college, branch FROM users WHERE id = $1', [id]);
+    const user = userRes.rows[0];
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    
+    res.status(201).json({ user, token });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
     
-    const userRes = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const userRes = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = userRes.rows[0];
     
-    if (!user || !bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!user || !user.password || !bcrypt.compareSync(password, user.password)) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
     
     const { password: _, ...safe } = user;
-    res.json({ user: safe });
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    
+    res.json({ user: safe, token });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/auth/google-login', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const { name, email, sub: google_id } = ticket.getPayload();
+
+    // Check if user exists by google_id or email
+    let userRes = await pool.query('SELECT * FROM users WHERE google_id = $1 OR email = $2', [google_id, email]);
+    let user = userRes.rows[0];
+
+    if (!user) {
+      // Create user if not exists
+      const id = uuidv4();
+      
+      // Generate a unique username from name or email prefix
+      let baseUsername = (name || email.split('@')[0]).toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (baseUsername.length < 4) baseUsername = 'user_' + baseUsername;
+      baseUsername = baseUsername.slice(0, 15); // Leave room for suffix
+
+      let finalUsername = baseUsername;
+      let counter = 1;
+      while (true) {
+        const check = await pool.query('SELECT id FROM users WHERE username = $1', [finalUsername]);
+        if (check.rows.length === 0) break;
+        finalUsername = `${baseUsername}_${counter}`;
+        counter++;
+      }
+
+      await pool.query(
+        'INSERT INTO users (id, name, username, email, google_id) VALUES ($1, $2, $3, $4, $5)',
+        [id, name, finalUsername, email, google_id]
+      );
+      userRes = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+      user = userRes.rows[0];
+    } else if (!user.google_id) {
+      // Link google id if email matches but google_id not set
+      await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [google_id, user.id]);
+      user.google_id = google_id;
+    }
+
+    const { password: _, ...safe } = user;
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    
+    res.json({ user: safe, token });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { username } = req.body;
+    const userRes = await pool.query('SELECT id, password FROM users WHERE username = $1', [username]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: 'Username not found' });
+
+    const user = userRes.rows[0];
+    if (!user.password) {
+      return res.status(400).json({ error: 'This user signed up with Google. Please use Google Login.' });
+    }
+
+    const resetToken = jwt.sign({ id: user.id, type: 'reset' }, JWT_SECRET, { expiresIn: '1h' });
+
+    // Since we no longer require email for manual signup, 
+    // we return the token directly or a success message.
+    // As per user request: 1. clicks forgot 2. enters username 3. system verifies 4. user creates new
+    // We will return a success state so the frontend can move to step 4 with the token.
+    res.json({ message: 'User verified.', token: resetToken });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.type !== 'reset') throw new Error('Invalid token type');
+
+    // Password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long and include an uppercase letter, lowercase letter, and a number.' });
+    }
+
+    const hashed = bcrypt.hashSync(newPassword, 10);
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashed, decoded.id]);
+
+    res.json({ message: 'Password reset successful. You can now login with your new password.' });
+  } catch (e) { res.status(400).json({ error: 'Invalid or expired reset token' }); }
 });
 
 /* ─── APPLICATIONS ─── */
@@ -316,6 +441,102 @@ app.get('/api/analytics/:userId', async (req, res) => {
       appsPerInterview, rejectedApplications, recommendations,
       placementProbability: finalProbability
     });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── COMMUNITY DISCUSSIONS ─── */
+app.get('/api/discussions', async (req, res) => {
+  try {
+    const { sort = 'recent' } = req.query;
+    let orderBy = 'd.created_at DESC';
+    if (sort === 'liked') orderBy = 'like_count DESC, d.created_at DESC';
+    if (sort === 'commented') orderBy = 'comment_count DESC, d.created_at DESC';
+
+    const query = `
+      SELECT d.*, u.username, 
+        (SELECT COUNT(*) FROM discussion_comments WHERE discussion_id = d.id) as comment_count,
+        (SELECT COUNT(*) FROM discussion_likes WHERE discussion_id = d.id) as like_count
+      FROM discussions d
+      JOIN users u ON d.user_id = u.id
+      ORDER BY ${orderBy}
+    `;
+    const rows = await pool.query(query);
+    res.json(rows.rows.map(r => ({ 
+      ...r, 
+      comment_count: parseInt(r.comment_count, 10), 
+      like_count: parseInt(r.like_count, 10),
+      tags: JSON.parse(r.tags || '[]')
+    })));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/discussions', async (req, res) => {
+  try {
+    const { user_id, title, company, role, stage, content, tags } = req.body;
+    const id = uuidv4();
+    await pool.query(
+      'INSERT INTO discussions (id, user_id, title, company, role, stage, content, tags) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      [id, user_id, title, company, role, stage, content, JSON.stringify(tags || [])]
+    );
+    const row = await pool.query('SELECT d.*, u.username FROM discussions d JOIN users u ON d.user_id = u.id WHERE d.id = $1', [id]);
+    res.status(201).json({ ...row.rows[0], tags: JSON.parse(row.rows[0].tags || '[]'), comment_count: 0, like_count: 0 });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/discussions/:id', async (req, res) => {
+  try {
+    const discRes = await pool.query(`
+      SELECT d.*, u.username,
+        (SELECT COUNT(*) FROM discussion_likes WHERE discussion_id = d.id) as like_count
+      FROM discussions d
+      JOIN users u ON d.user_id = u.id
+      WHERE d.id = $1
+    `, [req.params.id]);
+
+    if (discRes.rows.length === 0) return res.status(404).json({ error: 'Post not found' });
+
+    const comments = await pool.query(`
+      SELECT c.*, u.username
+      FROM discussion_comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.discussion_id = $1
+      ORDER BY c.created_at ASC
+    `, [req.params.id]);
+
+    res.json({
+      ...discRes.rows[0],
+      tags: JSON.parse(discRes.rows[0].tags || '[]'),
+      like_count: parseInt(discRes.rows[0].like_count, 10),
+      comments: comments.rows
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/discussions/:id/comments', async (req, res) => {
+  try {
+    const { user_id, content } = req.body;
+    const id = uuidv4();
+    await pool.query(
+      'INSERT INTO discussion_comments (id, discussion_id, user_id, content) VALUES ($1, $2, $3, $4)',
+      [id, req.params.id, user_id, content]
+    );
+    const row = await pool.query('SELECT c.*, u.username FROM discussion_comments c JOIN users u ON c.user_id = u.id WHERE c.id = $1', [id]);
+    res.status(201).json(row.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/discussions/:id/like', async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    const existing = await pool.query('SELECT * FROM discussion_likes WHERE user_id = $1 AND discussion_id = $2', [user_id, req.params.id]);
+    
+    if (existing.rows.length > 0) {
+      await pool.query('DELETE FROM discussion_likes WHERE user_id = $1 AND discussion_id = $2', [user_id, req.params.id]);
+      res.json({ liked: false });
+    } else {
+      await pool.query('INSERT INTO discussion_likes (user_id, discussion_id) VALUES ($1, $2)', [user_id, req.params.id]);
+      res.json({ liked: true });
+    }
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

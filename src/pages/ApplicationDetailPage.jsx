@@ -270,8 +270,15 @@ export default function ApplicationDetailPage() {
                       </div>
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Rejection Reason</label>
-                      <textarea className="form-textarea" placeholder="What was the reason?" value={outcomeForm.rejection_reason} onChange={e => setOutcomeForm(f => ({ ...f, rejection_reason: e.target.value }))} rows={2} />
+                      <label className="form-label">Interview Questions Asked</label>
+                      <textarea 
+                        className="form-textarea" 
+                        placeholder="What questions were asked during the interview?" 
+                        value={outcomeForm.rejection_reason} 
+                        onChange={e => setOutcomeForm(f => ({ ...f, rejection_reason: e.target.value }))} 
+                        rows={3} 
+                      />
+                      <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Optional: Help other students learn from your experience ✨</p>
                     </div>
                   </>
                 )}

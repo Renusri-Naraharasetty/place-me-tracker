@@ -3,13 +3,14 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Briefcase, FileSearch, TrendingUp,
-  LogOut, Menu, X, Sun, Moon
+  LogOut, Menu, X, Sun, Moon, MessageCircle
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/applications', icon: Briefcase, label: 'Applications' },
   { to: '/resume-analysis', icon: FileSearch, label: 'Resume Analysis' },
+  { to: '/community', icon: MessageCircle, label: 'Community' },
   { to: '/insights', icon: TrendingUp, label: 'Insights' },
 ];
 
@@ -72,7 +73,7 @@ export default function Layout() {
             <div className="sidebar-user-avatar">{initials}</div>
             <div className="sidebar-user-info">
               <div className="sidebar-user-name">{user?.name}</div>
-              <div className="sidebar-user-email">{user?.email}</div>
+              <div className="sidebar-user-email">@{user?.username}</div>
             </div>
           </div>
           {/* Theme Toggle */}

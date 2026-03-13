@@ -15,6 +15,9 @@ export const api = {
   // Auth
   signup: (body) => request('/auth/signup', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  googleLogin: (body) => request('/auth/google-login', { method: 'POST', body: JSON.stringify(body) }),
+  forgotPassword: (username) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ username }) }),
+  resetPassword: (token, newPassword) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
 
   // Applications
   getApplications: (userId) => request(`/applications/${userId}`),
@@ -42,4 +45,11 @@ export const api = {
 
   // Analytics
   getAnalytics: (userId) => request(`/analytics/${userId}`),
+
+  // Community Discussions
+  getDiscussions: (sort) => request(`/discussions?sort=${sort || 'recent'}`),
+  getDiscussion: (id) => request(`/discussions/${id}`),
+  createDiscussion: (body) => request('/discussions', { method: 'POST', body: JSON.stringify(body) }),
+  addComment: (id, body) => request(`/discussions/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
+  toggleLike: (id, userId) => request(`/discussions/${id}/like`, { method: 'POST', body: JSON.stringify({ user_id: userId }) }),
 };

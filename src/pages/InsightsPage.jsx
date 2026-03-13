@@ -252,7 +252,7 @@ export default function InsightsPage() {
                   <Bar data={rejStageData} options={chartOpts} />
                 </div>
               ) : (
-                <NoDataPlaceholder message="Open a rejected application → log its rejection stage to populate this chart." />
+                <NoDataPlaceholder message="Log the interview stage where you were rejected to see detailed rejection insights here." />
               )}
             </div>
 

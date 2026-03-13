@@ -6,13 +6,27 @@ import { UserPlus } from 'lucide-react';
 export default function SignupPage() {
   const { signup, loading, error, setError } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', college: '', branch: '' });
+  const [form, setForm] = useState({ name: '', username: '', password: '', college: '', branch: '' });
 
   const set = (key) => (e) => { setForm(f => ({ ...f, [key]: e.target.value })); setError(''); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.password.length < 6) { setError('Password must be at least 6 characters'); return; }
+    
+    // Username validation: 4-20 chars, alphanumeric/underscore
+    const usernameRegex = /^[a-zA-Z0-9_]{4,20}$/;
+    if (!usernameRegex.test(form.username)) {
+      setError('Username must be 4-20 characters long and contain only letters, numbers, and underscores.');
+      return;
+    }
+
+    // Password validation: min 6 chars, upper, lower, digit
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(form.password)) {
+      setError('Password must include at least 6 characters, one uppercase letter, one lowercase letter, and a number.');
+      return;
+    }
+
     try {
       await signup(form);
       navigate('/');
@@ -36,8 +50,8 @@ export default function SignupPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Email</label>
-            <input id="signup-email" type="email" className="form-input" placeholder="you@college.edu" value={form.email} onChange={set('email')} required />
+            <label className="form-label">Username</label>
+            <input id="signup-username" type="text" className="form-input" placeholder="johndoe123" value={form.username} onChange={set('username')} required />
           </div>
 
           <div className="form-group">

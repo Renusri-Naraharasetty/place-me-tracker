@@ -8,6 +8,10 @@ import ApplicationsPage from './pages/ApplicationsPage';
 import ApplicationDetailPage from './pages/ApplicationDetailPage';
 import ResumeAnalysisPage from './pages/ResumeAnalysisPage';
 import InsightsPage from './pages/InsightsPage';
+import CommunityPage from './pages/CommunityPage';
+import DiscussionDetailPage from './pages/DiscussionDetailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -26,12 +30,16 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+      <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="applications" element={<ApplicationsPage />} />
         <Route path="applications/:id" element={<ApplicationDetailPage />} />
         <Route path="resume-analysis" element={<ResumeAnalysisPage />} />
         <Route path="insights" element={<InsightsPage />} />
+        <Route path="community" element={<CommunityPage />} />
+        <Route path="community/:id" element={<DiscussionDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

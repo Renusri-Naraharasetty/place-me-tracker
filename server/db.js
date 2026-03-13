@@ -13,8 +13,10 @@ const initQuery = `
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE,
+    password TEXT,
+    google_id TEXT UNIQUE,
     college TEXT DEFAULT '',
     branch TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -76,6 +78,32 @@ const initQuery = `
     missing_skills TEXT DEFAULT '[]',
     score REAL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS discussions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    company TEXT NOT NULL,
+    role TEXT NOT NULL,
+    stage TEXT NOT NULL,
+    content TEXT NOT NULL,
+    tags TEXT DEFAULT '[]',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS discussion_comments (
+    id TEXT PRIMARY KEY,
+    discussion_id TEXT NOT NULL REFERENCES discussions(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS discussion_likes (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    discussion_id TEXT NOT NULL REFERENCES discussions(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, discussion_id)
   );
 `;
 

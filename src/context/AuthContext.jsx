@@ -12,16 +12,25 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user) localStorage.setItem('placeme_user', JSON.stringify(user));
-    else localStorage.removeItem('placeme_user');
+    if (user) {
+      localStorage.setItem('placeme_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('placeme_user');
+      localStorage.removeItem('placeme_token');
+    }
   }, [user]);
+
+  const saveAuth = (data) => {
+    setUser(data.user);
+    if (data.token) localStorage.setItem('placeme_token', data.token);
+  };
 
   const signup = async (data) => {
     setLoading(true);
     setError('');
     try {
       const res = await api.signup(data);
-      setUser(res.user);
+      saveAuth(res);
       return res.user;
     } catch (e) {
       setError(e.message);
@@ -31,12 +40,27 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (username, password) => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.login({ email, password });
-      setUser(res.user);
+      const res = await api.login({ username, password });
+      saveAuth(res);
+      return res.user;
+    } catch (e) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const googleLogin = async (credential) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.googleLogin({ credential });
+      saveAuth(res);
       return res.user;
     } catch (e) {
       setError(e.message);
@@ -51,7 +75,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, setError, signup, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, setError, signup, login, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );
