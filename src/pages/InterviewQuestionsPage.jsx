@@ -160,8 +160,6 @@ export default function InterviewQuestionsPage() {
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
         gap: 'var(--sp-4)',
-        maxHeight: 'calc(100vh - 350px)',
-        overflowY: 'auto',
         paddingRight: 'var(--sp-2)',
         paddingBottom: 'var(--sp-4)'
       }}>
