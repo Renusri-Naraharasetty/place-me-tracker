@@ -29,6 +29,11 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
+/* ─── HEALTH CHECK ─── */
+app.get('/api/ping', (req, res) => {
+  res.json({ status: 'ok', version: '1.0.2', timestamp: new Date().toISOString() });
+});
+
 /* ─── AUTH ─── */
 app.post('/api/auth/signup', async (req, res) => {
   try {
@@ -546,11 +551,15 @@ app.post('/api/discussions/:id/like', async (req, res) => {
 });
 
 app.delete('/api/discussions/:id', async (req, res) => {
+  console.log(`[${new Date().toISOString()}] DELETE /api/discussions/${req.params.id}`);
   try {
-    // Note: In a production app, we would verify ownership via JWT
-    await pool.query('DELETE FROM discussions WHERE id = $1', [req.params.id]);
+    const result = await pool.query('DELETE FROM discussions WHERE id = $1', [req.params.id]);
+    console.log(`Deleted rows: ${result.rowCount}`);
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { 
+    console.error('Delete error:', e);
+    res.status(500).json({ error: e.message }); 
+  }
 });
 
 const PORT = process.env.PORT || 3001;

@@ -40,6 +40,7 @@ export default function CommunityPage() {
 
   useEffect(() => {
     fetchDiscussions();
+    api.ping().then(d => console.log('DEBUG: Backend Version:', d)).catch(e => console.error('DEBUG: Ping failed:', e));
   }, [sort]);
 
   const handleSubmit = async (e) => {
