@@ -1,14 +1,33 @@
-// Use environment variable if it exists (for production), otherwise default to local dev server
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 async function request(url, options = {}) {
-  const res = await fetch(API + url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Something went wrong');
-  return data;
+  const fullUrl = API.startsWith('http') ? API + url : window.location.origin + API + url;
+  
+  try {
+    const res = await fetch(fullUrl, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options
+    });
+
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}: ${res.statusText}`);
+      return data;
+    } else {
+      const text = await res.text();
+      console.error('API Error: Non-JSON response received', {
+        status: res.status,
+        url: fullUrl,
+        bodyPreview: text.slice(0, 200)
+      });
+      if (!res.ok) throw new Error(`Server returned ${res.status} (${res.statusText}). Check console for details.`);
+      return text; // Fallback for plain text success
+    }
+  } catch (error) {
+    console.error('Fetch error:', error);
+    throw error;
+  }
 }
 
 export const api = {
