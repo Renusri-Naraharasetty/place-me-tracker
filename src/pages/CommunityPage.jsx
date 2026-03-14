@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Plus, MessageSquare, ThumbsUp, Search, Filter, 
-  Clock, TrendingUp, Users, Target
+  Clock, TrendingUp, Users, Target, X
 } from 'lucide-react';
 import AnimatedCounter from '../components/AnimatedCounter';
 
@@ -149,59 +150,69 @@ export default function CommunityPage() {
       )}
 
       {/* Modal */}
-      {showModal && (
+      {showModal && createPortal(
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-            <h2 className="modal-title">Share Your Experience</h2>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Share Your Experience</h2>
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Post Title</label>
-                <input 
-                  className="form-input" 
-                  placeholder="e.g. My Google SDE-1 Interview Journey" 
-                  value={form.title} 
-                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  required 
-                />
-              </div>
-              <div className="form-row">
+              <div className="modal-body">
                 <div className="form-group">
-                  <label className="form-label">Company</label>
-                  <input className="form-input" placeholder="e.g. Google" value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} required />
+                  <label className="form-label">Post Title</label>
+                  <input 
+                    className="form-input" 
+                    placeholder="e.g. My Google SDE-1 Interview Journey" 
+                    value={form.title} 
+                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                    required 
+                  />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Company</label>
+                    <input className="form-input" placeholder="e.g. Google" value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Role</label>
+                    <input className="form-input" placeholder="e.g. Software Engineer" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} required />
+                  </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Role</label>
-                  <input className="form-input" placeholder="e.g. Software Engineer" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} required />
+                  <label className="form-label">Interview Stage</label>
+                  <select className="form-select" value={form.stage} onChange={e => setForm(f => ({ ...f, stage: e.target.value }))}>
+                    {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Experience / Questions Asked</label>
+                  <textarea 
+                    className="form-textarea" 
+                    rows={6} 
+                    placeholder="Share the details... what questions were asked? how was the interviewer?" 
+                    value={form.content} 
+                    onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tags (Optional)</label>
+                  <input className="form-input" placeholder="e.g. python, dsa, system-design (comma separated)" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} />
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Interview Stage</label>
-                <select className="form-select" value={form.stage} onChange={e => setForm(f => ({ ...f, stage: e.target.value }))}>
-                  {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Experience / Questions Asked</label>
-                <textarea 
-                  className="form-textarea" 
-                  rows={6} 
-                  placeholder="Share the details... what questions were asked? how was the interviewer?" 
-                  value={form.content} 
-                  onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                  required 
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Tags (Optional)</label>
-                <input className="form-input" placeholder="e.g. python, dsa, system-design (comma separated)" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} />
-              </div>
-              <div className="modal-actions">
+              
+              <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary">Publish Post</button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
