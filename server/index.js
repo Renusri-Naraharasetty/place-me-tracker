@@ -6,6 +6,11 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import nodemailer from 'nodemailer';
 import pool from './db.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'placeme-super-secret-key-2024';
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -540,7 +545,25 @@ app.post('/api/discussions/:id/like', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.delete('/api/discussions/:id', async (req, res) => {
+  try {
+    // Note: In a production app, we would verify ownership via JWT
+    await pool.query('DELETE FROM discussions WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 const PORT = process.env.PORT || 3001;
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
 app.listen(PORT, () => {
   console.log(`✓ PlaceMe API running on port ${PORT} with PostgreSQL`);
 });

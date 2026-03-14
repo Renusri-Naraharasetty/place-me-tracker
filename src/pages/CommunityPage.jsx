@@ -5,7 +5,7 @@ import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Plus, MessageSquare, ThumbsUp, Search, Filter, 
-  Clock, TrendingUp, Users, Target, X
+  Clock, TrendingUp, Users, Target, X, Trash2
 } from 'lucide-react';
 import AnimatedCounter from '../components/AnimatedCounter';
 
@@ -49,6 +49,15 @@ export default function CommunityPage() {
       await api.createDiscussion({ ...form, tags: tagsArray, user_id: user.id });
       setShowModal(false);
       setForm({ title: '', company: '', role: '', stage: 'Technical Interview', content: '', tags: '' });
+      fetchDiscussions();
+    } catch (e) { alert(e.message); }
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this discussion?')) return;
+    try {
+      await api.deleteDiscussion(id);
       fetchDiscussions();
     } catch (e) { alert(e.message); }
   };
@@ -108,8 +117,20 @@ export default function CommunityPage() {
               cursor: 'pointer'
             }}>
               <div className="flex-between" style={{ marginBottom: 'var(--sp-3)' }}>
-                <span className="badge badge-applied" style={{ fontSize: '10px' }}>{d.stage}</span>
-                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>{new Date(d.created_at).toLocaleDateString()}</span>
+                <div style={{ display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' }}>
+                  <span className="badge badge-applied" style={{ fontSize: '10px' }}>{d.stage}</span>
+                  <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>{new Date(d.created_at).toLocaleDateString()}</span>
+                </div>
+                {user && user.id === d.user_id && (
+                  <button 
+                    className="btn btn-ghost btn-danger btn-sm" 
+                    onClick={(e) => handleDelete(e, d.id)}
+                    title="Delete discussion"
+                    style={{ padding: 4, height: 'auto', minHeight: 0 }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
               <h3 style={{ fontSize: 'var(--fs-base)', fontWeight: 700, marginBottom: 'var(--sp-1)' }}>{d.title}</h3>
               <div style={{ display: 'flex', gap: 'var(--sp-2)', marginBottom: 'var(--sp-4)', flexWrap: 'wrap' }}>

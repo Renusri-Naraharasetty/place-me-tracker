@@ -52,4 +52,5 @@ export const api = {
   createDiscussion: (body) => request('/discussions', { method: 'POST', body: JSON.stringify(body) }),
   addComment: (id, body) => request(`/discussions/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
   toggleLike: (id, userId) => request(`/discussions/${id}/like`, { method: 'POST', body: JSON.stringify({ user_id: userId }) }),
+  deleteDiscussion: (id) => request(`/discussions/${id}`, { method: 'DELETE' }),
 };
