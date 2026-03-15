@@ -1,14 +1,16 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
 import { analyzeMatch } from '../utils/skillsDictionary';
-import { Zap, Target, AlertCircle, UploadCloud, FileText, Trash2 } from 'lucide-react';
+import { Zap, Target, AlertCircle, UploadCloud, FileText, Trash2, ArrowLeft } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
 // Configure PDF.js worker using relative unpkg standard URL (best for Vite compatibility without backend setup)
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export default function ResumeAnalysisPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [resumeText, setResumeText] = useState('');
   const [fileName, setFileName] = useState('');
@@ -101,14 +103,24 @@ export default function ResumeAnalysisPage() {
 
   return (
     <div className="fade-in page-enter">
-      <div className="page-header" style={{ position: 'relative', zIndex: 1 }}>
-        <div>
-          <h1 className="page-title bounce-in" style={{ display: 'inline-block' }}>Resume Analysis 🤖</h1>
-          <p className="page-subtitle">Check how well your resume matches the job description ✨</p>
-        </div>
-        <button className="btn btn-secondary" onClick={loadHistory}>
-          View History ({history.length || '...'})
+      <div className="page-header" style={{ position: 'relative', zIndex: 1, flexDirection: 'column', alignItems: 'flex-start', gap: 'var(--sp-4)' }}>
+        <button 
+          onClick={() => navigate('/')}
+          className="btn btn-ghost"
+          style={{ paddingLeft: 0, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}
+        >
+          <ArrowLeft size={16} />
+          Back to Dashboard
         </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div>
+            <h1 className="page-title bounce-in" style={{ display: 'inline-block' }}>Resume Analysis 🤖</h1>
+            <p className="page-subtitle">Check how well your resume matches the job description ✨</p>
+          </div>
+          <button className="btn btn-secondary" onClick={loadHistory}>
+            View History ({history.length || '...'})
+          </button>
+        </div>
       </div>
 
       {/* Input Section */}

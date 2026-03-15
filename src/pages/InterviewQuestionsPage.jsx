@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
 import { 
   Calculator, Code, MessageCircle, ChevronRight, Hash, 
-  Terminal, Users, Search, Filter, X 
+  Terminal, Users, Search, Filter, X, ArrowLeft
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { INTERVIEW_QUESTIONS } from '../data/interviewQuestions';
 
 export default function InterviewQuestionsPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('aptitude');
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('All');
@@ -45,7 +47,15 @@ export default function InterviewQuestionsPage() {
 
   return (
     <div className="fade-in">
-      <div className="page-header">
+      <div className="page-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 'var(--sp-4)' }}>
+        <button 
+          onClick={() => navigate('/')}
+          className="btn btn-ghost"
+          style={{ paddingLeft: 0, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}
+        >
+          <ArrowLeft size={16} />
+          Back to Dashboard
+        </button>
         <div>
           <h1 className="page-title">Interview Questions</h1>
           <p className="page-subtitle">Master the most common questions and patterns</p>

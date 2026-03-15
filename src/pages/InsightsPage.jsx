@@ -1,12 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale,
   LinearScale, BarElement
 } from 'chart.js';
-import { TrendingUp, AlertTriangle, BookOpen, Lightbulb, Target, BarChart2 } from 'lucide-react';
+import { TrendingUp, AlertTriangle, BookOpen, Lightbulb, Target, BarChart2, ArrowLeft } from 'lucide-react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -56,6 +57,7 @@ function NoDataPlaceholder({ message }) {
 }
 
 export default function InsightsPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -192,7 +194,15 @@ export default function InsightsPage() {
 
   return (
     <div className="fade-in">
-      <div className="page-header">
+      <div className="page-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 'var(--sp-4)' }}>
+        <button 
+          onClick={() => navigate('/')}
+          className="btn btn-ghost"
+          style={{ paddingLeft: 0, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}
+        >
+          <ArrowLeft size={16} />
+          Back to Dashboard
+        </button>
         <div>
           <h1 className="page-title">Insights &amp; Analysis</h1>
           <p className="page-subtitle">Identify patterns and improve your chances</p>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import ApplicationFormModal from '../components/ApplicationFormModal';
-import { Plus, Search, Eye, Edit3, Trash2, Briefcase } from 'lucide-react';
+import { Plus, Search, Eye, Edit3, Trash2, Briefcase, ArrowLeft } from 'lucide-react';
 
 const STATUS_OPTIONS = ['All', 'Applied', 'Shortlisted', 'Interview Scheduled', 'Selected', 'Rejected'];
 
@@ -48,8 +48,16 @@ export default function ApplicationsPage() {
 
   return (
     <div className="fade-in page-enter" style={{ position: 'relative' }}>
-      <div className="page-header" style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--sp-4)' }}>
+      <div className="page-header" style={{ position: 'relative', zIndex: 1, flexDirection: 'column', alignItems: 'flex-start', gap: 'var(--sp-4)' }}>
+        <button 
+          onClick={() => navigate('/')}
+          className="btn btn-ghost"
+          style={{ paddingLeft: 0, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}
+        >
+          <ArrowLeft size={16} />
+          Back to Dashboard
+        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--sp-4)', width: '100%' }}>
           <div>
             <h1 className="page-title bounce-in" style={{ display: 'inline-block' }}>Applications 💼</h1>
             <p className="page-subtitle">{applications.length} applications tracked so far ✨</p>
