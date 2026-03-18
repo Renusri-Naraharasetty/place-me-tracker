@@ -72,6 +72,5 @@ export const api = {
   addComment: (id, body) => request(`/discussions/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
   toggleLike: (id, userId) => request(`/discussions/${id}/like`, { method: 'POST', body: JSON.stringify({ user_id: userId }) }),
   deleteDiscussion: (id) => request(`/discussions/${id}`, { method: 'DELETE' }),
-  getAdminStats: () => request('/admin/stats'),
   ping: () => request('/ping'),
 };

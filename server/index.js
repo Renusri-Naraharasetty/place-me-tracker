@@ -31,25 +31,7 @@ app.use(express.json({ limit: '5mb' }));
 
 /* ─── HEALTH CHECK ─── */
 app.get('/api/ping', (req, res) => {
-  res.json({ status: 'ok', version: '1.0.3', timestamp: new Date().toISOString() });
-});
-
-/* ─── ADMIN STATS ─── */
-app.get('/api/admin/stats', async (req, res) => {
-  try {
-    const userCount = await pool.query('SELECT COUNT(*) FROM users');
-    const appCount = await pool.query('SELECT COUNT(*) FROM applications');
-    const discCount = await pool.query('SELECT COUNT(*) FROM discussions');
-    
-    res.json({
-      totalUsers: parseInt(userCount.rows[0].count),
-      totalApplications: parseInt(appCount.rows[0].count),
-      totalDiscussions: parseInt(discCount.rows[0].count),
-      timestamp: new Date().toISOString()
-    });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  res.json({ status: 'ok', version: '1.0.2', timestamp: new Date().toISOString() });
 });
 
 /* ─── AUTH ─── */
