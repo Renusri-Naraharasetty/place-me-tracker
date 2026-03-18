@@ -49,11 +49,19 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { analytics, fetchAnalytics, fetchApplications, applications } = useData();
+  const [adminStats, setAdminStats] = useState(null);
+
+  const isAdmin = user?.username === 'renu_chikki';
 
   useEffect(() => {
     fetchAnalytics();
     fetchApplications();
-  }, [fetchAnalytics, fetchApplications]);
+    if (isAdmin) {
+      api.getAdminStats()
+        .then(setAdminStats)
+        .catch(err => console.error('Error fetching admin stats:', err));
+    }
+  }, [fetchAnalytics, fetchApplications, isAdmin]);
 
   const data = analytics || { total: 0, interviews: 0, offers: 0, rejections: 0, statusCounts: [], monthlyApps: [], rejectionStages: [], topMissingSkills: [] };
   const rejectionRate = data.total > 0 ? Math.round((data.rejections / data.total) * 100) : 0;
@@ -202,6 +210,36 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Admin Quick Stats */}
+      {isAdmin && adminStats && (
+        <div className="slide-up" style={{ marginBottom: 'var(--sp-8)' }}>
+          <div className="card" style={{ 
+            background: 'rgba(139, 92, 246, 0.1)', 
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 'var(--sp-6)',
+            padding: 'var(--sp-5) var(--sp-6)'
+          }}>
+            <div style={{ flex: 1, minWidth: '150px' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--accent-purple-light)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Platform Users</div>
+              <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 800 }}>{adminStats.totalUsers}</div>
+            </div>
+            <div style={{ flex: 1, minWidth: '150px' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--accent-purple-light)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Total Applications</div>
+              <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 800 }}>{adminStats.totalApplications}</div>
+            </div>
+            <div style={{ flex: 1, minWidth: '150px' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--accent-purple-light)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Community Posts</div>
+              <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 800 }}>{adminStats.totalDiscussions}</div>
+            </div>
+            <div style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+               <span className="badge badge-purple" style={{ background: 'rgba(139, 92, 246, 0.2)', color: 'var(--accent-purple-light)' }}>Admin View</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ marginBottom: 'var(--sp-8)', position: 'relative', zIndex: 1 }}>
         <MotivationalTip />
