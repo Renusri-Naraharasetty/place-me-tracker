@@ -31,7 +31,7 @@ app.use(express.json({ limit: '5mb' }));
 
 /* ─── HEALTH CHECK ─── */
 app.get('/api/ping', (req, res) => {
-  res.json({ status: 'ok', version: '1.0.2', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', version: '1.0.3', timestamp: new Date().toISOString() });
 });
 
 /* ─── ADMIN STATS ─── */
